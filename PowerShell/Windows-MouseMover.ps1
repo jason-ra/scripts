@@ -104,31 +104,28 @@ $rect = New-Object User32+Rect
 
 # Variables to define the movement
 $height = $rect.Bottom - $rect.Top
-$xStep = 60 # step size for horizontal movement
+$xStepNormal = 60 # Step size for horizontal movement
+$xStepSlow = 20 # Slow down while at the edges of the window
+$xThreshold = ($rect.Right - $rect.Left) * 0.2 
 #$yStep = 150 # step size for vertical movement
 $yStep = $height / 8
-
 $switch = $true # Controls alternating movement between left-to-right and right-to-left
-# Move the cursor inside the window
+$xStep = $xStepNormal # Default to normal speed
 while ($true) {
     for ($y = $rect.Top + 50; $y -lt $rect.Bottom; $y += $yStep) {
-        if ($switch) {
-            for ($x = $rect.Left + 15; $x -lt $rect.Right; $x += $xStep) {
-                [User32]::SetCursorPos($x, $y) | Out-Null
-                Start-Sleep -Milliseconds 1
-            }
-            $switch = $false
+        $x = $switch ? $rect.Left : $rect.Right
+        $direction = $switch ? 1 : -1
+
+        while (($switch -and $x -lt $rect.Right) -or (-not $switch -and $x -gt $rect.Left)) {
+            [User32]::SetCursorPos($x, $y) | Out-Null
+            Start-Sleep -Milliseconds 1
+            $xStep = ($x -lt $rect.Left + $xThreshold -or $x -gt $rect.Right - $xThreshold) ? $xStepSlow : $xStepNormal
+            $x += $xStep * $direction
         }
-        else {
-            for ($x = $rect.Right; $x -gt $rect.Left; $x -= $xStep) {
-                [User32]::SetCursorPos($x, $y) | Out-Null
-                Start-Sleep -Milliseconds 1
-            }
-            $switch = $true
-        }
+        $switch = -not $switch # Change direction when the end is reached
     }
     # Reset to top-left
     $x = $rect.Left
     $y = $rect.Top
-    $switch = $true
+    $switch = $true # Reset to left-to-right
 }
