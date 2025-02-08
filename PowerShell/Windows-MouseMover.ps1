@@ -103,9 +103,6 @@ $rect = New-Object User32+Rect
 [User32]::GetWindowRect($handle, [ref]$rect) | Out-Null
 
 # Variables to define the movement
-$x = $rect.Left
-$y = $rect.Top
-$width = $rect.Right - $rect.Left
 $height = $rect.Bottom - $rect.Top
 $xStep = 60 # step size for horizontal movement
 #$yStep = 150 # step size for vertical movement
