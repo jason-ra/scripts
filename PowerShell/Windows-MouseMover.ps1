@@ -1,6 +1,18 @@
-## Purpose: Move the mouse automatically across the Leaf Blower Revolution window
-## to collect materials AFK
+<#
+.Synopsis
+   Automatic mouse mover that criss-crosses a chosen window / app
+.DESCRIPTION
+   Intended for Leaf Blower Revolution, the script runs continuously and moves the mouse cursor
+   across an the open application to collect materials while AFK. Written for LBR using Steam.
 
+   Run the script and press Control+Break to exit.
+.INPUTS
+   None
+.OUTPUTS
+   None
+.EXAMPLE
+   .\Windows\MouseMover.ps1
+#>
 
 # Add-Type is used to access Windows API functions
 Add-Type -TypeDefinition @"
@@ -45,8 +57,7 @@ function Get-WindowNames {
     $callback = [User32+EnumWindowsProc] {
         param ($hWnd, $lParam)
 
-        #Write-Host $hWnd
-        #$WindowHandles.Add($hWnd)
+        # Filter on visible windows only
         if ([User32]::IsWindowVisible($hWnd)) {
             $builder = New-Object System.Text.StringBuilder 256
             [User32]::GetWindowText($hWnd, $builder, $builder.Capacity) | Out-Null
@@ -61,6 +72,7 @@ function Get-WindowNames {
     }
 
     if ([User32]::EnumWindows($callback, [IntPtr]::Zero)) {
+        # Return object of handle and window name
         $i = 0
         $result = foreach ($handle In $WindowHandles) {
             [PSCustomObject]@{
@@ -74,14 +86,15 @@ function Get-WindowNames {
     
 }
 
-# Get Handle for LBR
-$handle = (Get-WindowNames | ? { $_.Name -eq "Leaf Blower Revolution" }).Handle
+# Get handle for app name
+$appName = "Leaf Blower Revolution"
+$handle = (Get-WindowNames | ? { $_.Name -eq $appName }).Handle
 
 if ($handle) {
-    Write-Host "Found handle $handle for LBR"
+    Write-Host "Found handle $handle for $appName"
 }
 else {
-    Write-Host "Could not find LBR. Exiting"
+    Write-Host "Could not find window for $appName. Exiting"
     exit
 }
 
@@ -98,11 +111,10 @@ $xStep = 60 # step size for horizontal movement
 #$yStep = 150 # step size for vertical movement
 $yStep = $height / 8
 
-$switch = $true
+$switch = $true # Controls alternating movement between left-to-right and right-to-left
 # Move the cursor inside the window
 while ($true) {
     for ($y = $rect.Top + 50; $y -lt $rect.Bottom; $y += $yStep) {
-        #if ($y -ge ($rect.Bottom - 200)) { $y = $rect.Bottom - 10 }
         if ($switch) {
             for ($x = $rect.Left + 15; $x -lt $rect.Right; $x += $xStep) {
                 [User32]::SetCursorPos($x, $y) | Out-Null
